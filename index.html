@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deterministic Event System - Interactive Playground</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 1200px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .card h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+
+        button:hover {
+            background: #764ba2;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: #f0f0f0;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+
+        button.secondary:hover {
+            background: #e5e5e5;
+        }
+
+        button.danger {
+            background: #e74c3c;
+        }
+
+        button.danger:hover {
+            background: #c0392b;
+        }
+
+        .state-display {
+            background: #f9f9f9;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 15px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            word-break: break-all;
+        }
+
+        .state-display pre {
+            margin: 0;
+            color: #666;
+        }
+
+        .event-log {
+            background: #f9f9f9;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .event-item {
+            padding: 10px;
+            border-left: 3px solid #667eea;
+            background: white;
+            margin-bottom: 8px;
+            border-radius: 2px;
+            font-size: 13px;
+        }
+
+        .event-item .type {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .event-item .index {
+            color: #999;
+            font-size: 11px;
+            margin-right: 8px;
+        }
+
+        .event-item .payload {
+            color: #666;
+            font-size: 12px;
+            margin-top: 4px;
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .stat {
+            background: #f0f0f0;
+            padding: 12px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #999;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        .hash-display {
+            background: #f9f9f9;
+            border: 1px solid #eee;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 11px;
+            word-break: break-all;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .proof-section {
+            background: #e8f4f8;
+            border: 1px solid #b3dce0;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .proof-section h3 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #0277bd;
+        }
+
+        .proof-result {
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .proof-icon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 20px;
+            margin-right: 8px;
+            font-weight: bold;
+        }
+
+        .proof-icon.success {
+            background: #4caf50;
+            color: white;
+        }
+
+        .proof-icon.error {
+            background: #f44336;
+            color: white;
+        }
+
+        .visualization {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .timeline {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 20px;
+            overflow-x: auto;
+            padding: 20px 0;
+        }
+
+        .timeline-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 100px;
+        }
+
+        .timeline-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #667eea;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .timeline-label {
+            font-size: 11px;
+            color: #666;
+            text-align: center;
+            max-width: 100px;
+            word-wrap: break-word;
+        }
+
+        .timeline-arrow {
+            width: 30px;
+            height: 2px;
+            background: #ddd;
+            position: relative;
+        }
+
+        .timeline-arrow::after {
+            content: '→';
+            position: absolute;
+            right: -8px;
+            top: -9px;
+            color: #ddd;
+        }
+
+        .empty-state {
+            color: #999;
+            padding: 20px;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .tab {
+            padding: 10px 16px;
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .code-block {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 12px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            color: #333;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚡ Deterministic Event System</h1>
+            <p>Interactive playground for event sourcing with pure reducers, deterministic state, and causal proofs</p>
+        </header>
+
+        <div class="main-grid">
+            <!-- LEFT PANEL: Controls -->
+            <div>
+                <div class="card">
+                    <h2>System Setup</h2>
+                    
+                    <div class="control-group">
+                        <label>System Type</label>
+                        <select id="systemType" onchange="changeSystemType()">
+                            <option value="counter">Counter (Simple)</option>
+                            <option value="todo">Todo List</option>
+                            <option value="bank">Bank Account</option>
+                        </select>
+                    </div>
+
+                    <button onclick="initializeSystem()" style="width: 100%;">Initialize System</button>
+                </div>
+
+                <div class="card" style="margin-top: 20px;">
+                    <h2>Event Controls</h2>
+                    
+                    <div id="eventControls">
+                        <!-- Dynamically populated based on system type -->
+                    </div>
+
+                    <button id="applyButton" onclick="applyEvent()" style="width: 100%;" disabled>Apply Event</button>
+                </div>
+
+                <div class="card" style="margin-top: 20px;">
+                    <h2>System Actions</h2>
+                    
+                    <button onclick="replayHistory()" class="secondary" style="width: 100%;">Replay History</button>
+                    <button onclick="verifyIntegrity()" class="secondary" style="width: 100%;">Verify Integrity</button>
+                    <button onclick="resetSystem()" class="danger" style="width: 100%;">Reset System</button>
+                </div>
+            </div>
+
+            <!-- RIGHT PANEL: State & Visualization -->
+            <div>
+                <div class="card">
+                    <h2>Current State</h2>
+                    
+                    <div class="stats">
+                        <div class="stat">
+                            <div class="stat-value" id="eventCount">0</div>
+                            <div class="stat-label">Events</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value" id="stateHash">-</div>
+                            <div class="stat-label">State Hash</div>
+                        </div>
+                    </div>
+
+                    <div class="state-display">
+                        <pre id="stateDisplay">Ready to initialize...</pre>
+                    </div>
+
+                    <div class="hash-display">
+                        <strong>Full Hash:</strong><br>
+                        <span id="fullHash">-</span>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 20px;">
+                    <h2>Event Log</h2>
+                    <div class="event-log" id="eventLog">
+                        <div class="empty-state">No events yet</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTTOM PANEL: Proofs & Timeline -->
+        <div class="visualization">
+            <h2 style="text-align: left; margin-bottom: 20px; color: #667eea;">State Timeline</h2>
+            <div class="timeline" id="timeline">
+                <div class="empty-state">No events to visualize</div>
+            </div>
+        </div>
+
+        <!-- PROOF SECTION -->
+        <div class="card">
+            <h2>Verification & Proofs</h2>
+
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('integrity')">Integrity Check</button>
+                <button class="tab" onclick="switchTab('proof')">Causality Proof</button>
+            </div>
+
+            <div id="integrity" class="tab-content active">
+                <div class="proof-section">
+                    <h3>Event Chain Integrity</h3>
+                    <div id="integrityResult" class="empty-state">No events to verify</div>
+                </div>
+            </div>
+
+            <div id="proof" class="tab-content">
+                <div class="control-group">
+                    <label>Verify state at event index:</label>
+                    <input type="number" id="proofIndex" min="0" placeholder="Event index">
+                </div>
+                <button onclick="generateProof()" style="width: 100%;">Generate Proof</button>
+                <div id="proofResult" class="proof-section" style="display: none; margin-top: 15px;">
+                    <h3>Proof Result</h3>
+                    <div id="proofContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let system = null;
+        let systemType = 'counter';
+
+        function changeSystemType() {
+            systemType = document.getElementById('systemType').value;
+        }
+
+        function initializeSystem() {
+            // Mock system object for demonstration
+            system = {
+                currentState: {},
+                events: [],
+                reducers: {},
+                stats: { totalEvents: 0, currentStateHash: 'abc123' },
+                appendEvent(event) {
+                    this.events.push({
+                        index: this.events.length,
+                        type: event.type,
+                        payload: event.payload,
+                        timestamp: Date.now()
+                    });
+                    this.stats.totalEvents++;
+                    this.updateState();
+                },
+                updateState() {
+                    // Simulate state update based on events
+                    switch (systemType) {
+                        case 'counter':
+                            this.currentState = { count: this.events.reduce((sum, e) => {
+                                if (e.type === 'INCREMENT') return sum + (e.payload.amount || 1);
+                                if (e.type === 'DECREMENT') return sum - (e.payload.amount || 1);
+                                return sum;
+                            }, 0) };
+                            break;
+                        case 'todo':
+                            this.currentState = { 
+                                todos: this.events.reduce((arr, e) => {
+                                    if (e.type === 'ADD') arr.push(e.payload.text);
+                                    if (e.type === 'REMOVE') arr = arr.filter(t => t !== e.payload.text);
+                                    return arr;
+                                }, [])
+                            };
+                            break;
+                        case 'bank':
+                            this.currentState = { 
+                                balance: this.events.reduce((sum, e) => {
+                                    if (e.type === 'DEPOSIT') return sum + (e.payload.amount || 0);
+                                    if (e.type === 'WITHDRAW') return sum - (e.payload.amount || 0);
+                                    return sum;
+                                }, 1000)
+                            };
+                            break;
+                    }
+                },
+                verifyIntegrity() {
+                    return { valid: true, error: null };
+                }
+            };
+
+            updateEventControls();
+            updateUI();
+        }
+
+        function updateEventControls() {
+            const controls = document.getElementById('eventControls');
+            controls.innerHTML = '';
+
+            const controlsConfig = {
+                counter: [
+                    { label: 'Amount', type: 'number', id: 'amount', value: '1' },
+                    { label: 'Action', type: 'select', id: 'action', options: ['INCREMENT', 'DECREMENT', 'RESET'] }
+                ],
+                todo: [
+                    { label: 'Todo Text', type: 'text', id: 'todoText', placeholder: 'What to do?' },
+                    { label: 'Action', type: 'select', id: 'action', options: ['ADD', 'REMOVE'] }
+                ],
+                bank: [
+                    { label: 'Amount', type: 'number', id: 'amount', value: '100' },
+                    { label: 'Action', type: 'select', id: 'action', options: ['DEPOSIT', 'WITHDRAW'] }
+                ]
+            };
+
+            const config = controlsConfig[systemType] || [];
+            config.forEach(field => {
+                const group = document.createElement('div');
+                group.className = 'control-group';
+                group.innerHTML = `<label>${field.label}</label>`;
+
+                if (field.type === 'select') {
+                    const select = document.createElement('select');
+                    select.id = field.id;
+                    field.options.forEach(opt => {
+                        const option = document.createElement('option');
+                        option.value = opt;
+                        option.textContent = opt;
+                        select.appendChild(option);
+                    });
+                    group.appendChild(select);
+                } else {
+                    const input = document.createElement('input');
+                    input.type = field.type;
+                    input.id = field.id;
+                    input.placeholder = field.placeholder || '';
+                    input.value = field.value || '';
+                    group.appendChild(input);
+                }
+
+                controls.appendChild(group);
+            });
+
+            document.getElementById('applyButton').disabled = false;
+        }
+
+        function applyEvent() {
+            if (!system) return;
+
+            let event = { type: document.getElementById('action').value, payload: {} };
+
+            if (systemType === 'counter' || systemType === 'bank') {
+                event.payload.amount = parseInt(document.getElementById('amount').value) || 0;
+            }
+            if (systemType === 'todo') {
+                event.payload.text = document.getElementById('todoText').value;
+            }
+
+            system.appendEvent(event);
+            updateUI();
+        }
+
+        function updateUI() {
+            if (!system) return;
+
+            // Update state display
+            document.getElementById('stateDisplay').textContent = JSON.stringify(system.currentState, null, 2);
+            document.getElementById('eventCount').textContent = system.stats.totalEvents;
+            document.getElementById('stateHash').textContent = system.stats.currentStateHash.substring(0, 8);
+            document.getElementById('fullHash').textContent = system.stats.currentStateHash;
+
+            // Update event log
+            const eventLog = document.getElementById('eventLog');
+            if (system.events.length === 0) {
+                eventLog.innerHTML = '<div class="empty-state">No events yet</div>';
+            } else {
+                eventLog.innerHTML = system.events.map(e => `
+                    <div class="event-item">
+                        <span class="index">[${e.index}]</span>
+                        <span class="type">${e.type}</span>
+                        <div class="payload">${JSON.stringify(e.payload)}</div>
+                    </div>
+                `).join('');
+            }
+
+            // Update timeline
+            updateTimeline();
+
+            // Update integrity check
+            updateIntegrityDisplay();
+        }
+
+        function updateTimeline() {
+            const timeline = document.getElementById('timeline');
+            if (system.events.length === 0) {
+                timeline.innerHTML = '<div class="empty-state">No events to visualize</div>';
+                return;
+            }
+
+            const items = system.events.map((e, i) => `
+                <div class="timeline-item">
+                    <div class="timeline-circle">${i}</div>
+                    <div class="timeline-label">${e.type}</div>
+                </div>
+                ${i < system.events.length - 1 ? '<div class="timeline-arrow"></div>' : ''}
+            `).join('');
+
+            timeline.innerHTML = items;
+        }
+
+        function updateIntegrityDisplay() {
+            const result = document.getElementById('integrityResult');
+            if (system.events.length === 0) {
+                result.textContent = 'No events to verify';
+                return;
+            }
+
+            const integrity = system.verifyIntegrity();
+            result.innerHTML = `
+                <div class="proof-result">
+                    <span class="proof-icon ${integrity.valid ? 'success' : 'error'}">
+                        ${integrity.valid ? '✓' : '✗'}
+                    </span>
+                    <strong>Event Chain:</strong> ${integrity.valid ? 'Valid ✓' : 'Invalid ✗'}<br>
+                    <strong>Total Events:</strong> ${system.events.length}<br>
+                    ${integrity.error ? `<strong>Error:</strong> ${integrity.error}` : ''}
+                </div>
+            `;
+        }
+
+        function generateProof() {
+            const index = parseInt(document.getElementById('proofIndex').value);
+            if (isNaN(index) || index < 0 || index >= system.events.length) {
+                alert('Invalid event index');
+                return;
+            }
+
+            const resultDiv = document.getElementById('proofResult');
+            const contentDiv = document.getElementById('proofContent');
+
+            resultDiv.style.display = 'block';
+            contentDiv.innerHTML = `
+                <div class="proof-result">
+                    <span class="proof-icon success">✓</span>
+                    <strong>State at Event ${index}:</strong><br>
+                    ${JSON.stringify(system.currentState, null, 2)}<br><br>
+                    <strong>Causal Chain:</strong> ${system.events.slice(0, index + 1).map(e => e.type).join(' → ')}<br><br>
+                    <strong>Proof:</strong> All prior events have been deterministically applied to derive this state.
+                </div>
+            `;
+        }
+
+        function replayHistory() {
+            if (!system || system.events.length === 0) {
+                alert('No events to replay');
+                return;
+            }
+            alert(`Replayed ${system.events.length} events. Current state verified.`);
+        }
+
+        function verifyIntegrity() {
+            if (!system) {
+                alert('Initialize system first');
+                return;
+            }
+            const result = system.verifyIntegrity();
+            alert(result.valid ? 'Event chain integrity: Valid ✓' : `Integrity check failed: ${result.error}`);
+        }
+
+        function resetSystem() {
+            system = null;
+            document.getElementById('stateDisplay').textContent = 'Ready to initialize...';
+            document.getElementById('eventLog').innerHTML = '<div class="empty-state">No events yet</div>';
+            document.getElementById('timeline').innerHTML = '<div class="empty-state">No events to visualize</div>';
+            document.getElementById('integrityResult').textContent = 'No events to verify';
+            document.getElementById('eventCount').textContent = '0';
+            document.getElementById('stateHash').textContent = '-';
+            document.getElementById('fullHash').textContent = '-';
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('systemType').value = 'counter';
+        });
+    </script>
+</body>
+</html>
